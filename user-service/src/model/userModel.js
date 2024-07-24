@@ -19,7 +19,12 @@ const userSchema = new mongoose.Schema({
     required: false
   },
   number: {
-    type: number,
+    type: Number,
+    default: null,
+    required: false
+  },
+  profile_image: {
+    type: String,
     default: null,
     required: false
   },
