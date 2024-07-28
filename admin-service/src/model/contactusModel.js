@@ -1,7 +1,7 @@
 // models/Category.js
 const mongoose = require("mongoose");
 
-const termsandconditionSchema = new mongoose.Schema({
+const contactusSchema = new mongoose.Schema({
   number: {
     type: Number,
     required: false,
@@ -26,6 +26,6 @@ const termsandconditionSchema = new mongoose.Schema({
   },
 });
 
-const termsandcondition = mongoose.model("termsandcondition", termsandconditionSchema);
+const contactus = mongoose.model("contactus", contactusSchema);
 
-module.exports = termsandcondition;
+module.exports = contactus;

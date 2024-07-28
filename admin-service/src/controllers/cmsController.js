@@ -309,7 +309,7 @@ exports.get_termsandcondition = catchAsync(async (req, res) => {
 //region create contactus api
 exports.create_contactus = catchAsync(async (req, res) => {
   const { number, email, address } = req.body;
-  const model = require("../model/termscondition");
+  const model = require("../model/contactusModel");
   const existContactus = await model.findOne({});
   if (existContactus) {
     const update_contactus = await model.findOneAndUpdate({
@@ -356,7 +356,7 @@ exports.create_contactus = catchAsync(async (req, res) => {
 
 //#region get contactus
 exports.get_contactus = catchAsync(async (req, res) => {
-  const model = require("../model/termscondition");
+  const model = require("../model/contactusModel");
   const find_contactus = await model.findOne({});
   if (find_contactus) {
     return response_ok(
