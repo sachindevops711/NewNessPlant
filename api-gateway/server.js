@@ -10,6 +10,10 @@ const routes = [
     path: '/api/v1/user',
     target: 'http://localhost:4003',
   },
+  {
+    path: '/api/v1/admin',
+    target: 'http://localhost:4001',
+  },
 ];
 
 routes.forEach((route) => {

@@ -1,10 +1,10 @@
 const jwt = require("jsonwebtoken");
 require("dotenv").config();
-const userModel = require("../model/userModel");
+const bcrypt = require("bcryptjs");
+const adminModel = require("../model/adminModel");
 const accountSid = process.env.TWILIO_ACCOUNT_SID;
 const authToken = process.env.TWILIO_AUTH_TOKEN;
 const Textlocal = require('textlocal-complete');
-// const Textlocal = require('textlocal');
 
 exports.createJwtTokens = (payload) => {
   const access = jwt.sign(payload, process.env.ACCESS_TOKEN_SECRET, {
@@ -26,19 +26,10 @@ exports.catchAsync = (fn) => {
 
 exports.findUserByEmail = async (email) => {
   try {
-    const user = await userModel.findOne({ email, is_deleted: false });
+    const user = await adminModel.findOne({ email });
     return user;
   } catch (error) {
     throw new Error(`Error finding user by email: ${error.message}`);
-  }
-};
-
-exports.findUserByNumber = async (number) => {
-  try {
-    const user = await userModel.findOne({ number, is_deleted: false });
-    return user;
-  } catch (error) {
-    throw new Error(`Error finding user by number: ${error.message}`);
   }
 };
 

@@ -1,9 +1,10 @@
 const responseMessage = require("../helper/responseMessage");
-const bcrypt = require("bcrypt");
+const bcrypt = require("bcryptjs");
 const { v4: uuidv4 } = require("uuid");
 const jwt = require("jsonwebtoken");
 const {
   createJwtTokens,
+  encryptPassword,
   catchAsync,
   findUserByNumber,
   findUserByEmail,
@@ -23,56 +24,22 @@ const fs = require("fs");
 const path = require("path");
 const { resetPasswordMailforUser } = require("../config/mailService");
 
-//#region register user
-exports.registerUser = catchAsync(async (req, res) => {
-  let { name, last_name, email, password, number } = req.body;
-  const model = require("../model/userModel");
-  const existUser = await findUserByEmail(email);
-  if (existUser) {
-    return response_ok(res, responseMessage.USER_ALREADY_EXIST, existUser);
-  } else {
-    encrypt = await encryptPassword(password);
-    const data = new model({
-      first_name: name,
-      last_name,
-      number,
-      email,
-      password,
-    });
-    let result = await data.save();
-    if (result) {
-      return response_created(
-        res,
-        responseMessage.USER_ACCOUNT_CREATED,
-        result
-      );
-    } else {
-      return response_bad_request(
-        res,
-        responseMessage.FAILED_TO_REGISTER_AS_USER,
-        []
-      );
-    }
-  }
-});
-//#endregion
-
 //#region login
 exports.login = catchAsync(async (req, res) => {
   let { email, password } = req.body;
   email = email ? email.toLowerCase() : "";
-  const existUser = await findUserByEmail(email);
-  if (existUser && existUser._id) {
-    const validPassword = await bcrypt.compare(password, existUser.password);
+  const existAdmin = await findUserByEmail(email);
+  if (existAdmin && existAdmin._id) {
+    const validPassword = await bcrypt.compare(password, existAdmin.password);
     if (validPassword) {
-      const payload = { userId: existUser._id };
+      const payload = { adminId: existAdmin._id };
       const { access_token, refresh_token } = createJwtTokens(payload);
-      // Save refresh token to user (you should store this securely)
-      existUser.refresh_token = refresh_token;
-      await existUser.save();
+      // Save refresh token to admin (you should store this securely)
+      existAdmin.refresh_token = refresh_token;
+      await existAdmin.save();
       return response_ok(res, responseMessage.USER_LOGGED_IN, {
         access_token,
-        ...existUser._doc,
+        ...existAdmin._doc,
       });
     } else {
       return unauthorize(res, responseMessage.INCORRECT_CREDENTIALS);
@@ -85,10 +52,10 @@ exports.login = catchAsync(async (req, res) => {
 
 //#region edit profile
 exports.edit_profile = catchAsync(async (req, res) => {
-  const { name, dob, gender, number } = req.body;
-  const model = require("../model/userModel");
+  const { name, dob, gender } = req.body;
+  const model = require("../model/adminModel");
   const find_profile = await model.findById({
-    _id: req.user_id,
+    _id: req.admin_id,
     is_deleted: false,
   });
   if (req.fileUrl) {
@@ -111,10 +78,9 @@ exports.edit_profile = catchAsync(async (req, res) => {
       { _id: find_profile._id },
       {
         $set: {
-          first_name: name,
+          name,
           dob,
           gender,
-          number,
           profile_image: req.fileUrl,
         },
       },
@@ -123,49 +89,43 @@ exports.edit_profile = catchAsync(async (req, res) => {
     if (update_profile) {
       return response_ok(
         res,
-        responseMessage.USER_PROFILE_UPDATED,
+        responseMessage.ADMIN_PROFILE_UPDATED,
         update_profile
       );
     } else {
       return response_bad_request(
         res,
-        responseMessage.FAILED_TO_REGISTER_AS_USER,
+        responseMessage.FAILED_TO_UPDATE_PROFILE,
         []
       );
     }
   } else {
-    return data_not_found(res, "User");
+    return data_not_found(res, "Admin");
   }
 });
 //#endregion
 
 //#region forgot password
 exports.forgot_password = catchAsync(async (req, res) => {
-  let user;
-  if (req.body.number) {
-    user = await findUserByNumber(req.body.number);
-  } else if (req.body.email) {
-    user = await findUserByEmail(req.body.email);
-  }
-  if (!user) {
-    return data_not_found(res, "User");
+  let admin= await findUserByEmail(req.body.email);
+  if (!admin) {
+    return data_not_found(res, "Admin");
   }
   // const welcomeMessage = 'Welcome to Newness plant! Your verification code is 54875';
-  // sendSms(user.number, welcomeMessage);
+  // sendSms(admin.number, welcomeMessage);
   // Generate reset token and set expiration time (30 minutes from now)
   const resetToken = Math.floor(100000 + Math.random() * 900000);
-  user.reset_password_token = resetToken;
-  user.reset_password_expires = Date.now() + 30 * 60 * 1000; // 30 minutes
-  await user.save();
+  admin.reset_password_token = resetToken;
+  admin.reset_password_expires = Date.now() + 30 * 60 * 1000; // 30 minutes
+  await admin.save();
   const payload = {
-    email: user.email,
-    name: user.first_name,
+    email: admin.email,
+    name: admin.name,
     resetToken,
   };
   // Send reset email or message
   await resetPasswordMailforUser(payload);
-  const type = req.body.number ? "message" : "email";
-  return response_ok(res, `Password reset ${type} sent`, user);
+  return response_ok(res, `Password reset number sent`, admin);
 });
 //#endregion
 
@@ -173,14 +133,14 @@ exports.forgot_password = catchAsync(async (req, res) => {
 exports.reset_password = catchAsync(async (req, res) => {
   const { otp } = req.params;
   const { password } = req.body;
-  const model = require("../model/userModel");
-  // Find the user with the reset token and check if it's still valid
-  const find_user = await model.findOne({
+  const model = require("../model/adminModel");
+  // Find the admin with the reset token and check if it's still valid
+  const find_admin = await model.findOne({
     reset_password_token: otp,
     reset_password_expires: { $gt: Date.now() }, // Check if the token has not expired
   });
 
-  if (!find_user) {
+  if (!find_admin) {
     return custom_error_response(
       res,
       404,
@@ -188,14 +148,18 @@ exports.reset_password = catchAsync(async (req, res) => {
     );
   }
 
-  // Update the user's password and clear the reset token fields
-  find_user.password = password;
-  find_user.reset_password_token = undefined;
-  find_user.reset_password_expires = undefined;
-  await find_user.save();
+  // Hash the new password
+  const salt = await bcrypt.genSalt(10);
+  const hashedPassword = await bcrypt.hash(password, salt);
+
+  // Update the admin's password and clear the reset token fields
+  find_admin.password = hashedPassword;
+  find_admin.reset_password_token = undefined;
+  find_admin.reset_password_expires = undefined;
+  await find_admin.save();
 
   return response_ok(res, "Password has been reset successfully", {
-    user_id: find_user._id,
+    user_id: find_admin._id,
   });
 });
 //#endregion
@@ -203,36 +167,36 @@ exports.reset_password = catchAsync(async (req, res) => {
 //#region change password
 exports.change_password = catchAsync(async (req, res) => {
   const { current_password, new_password } = req.body;
-  const model = require("../model/userModel");
-  // Find the user
-  const user = await model.findById({ _id: req.user_id, is_deleted: false });
-  if (!user) {
-    return data_not_found(res, "User");
+  const model = require("../model/adminModel");
+  // Find the admin
+  const admin = await model.findById({ _id: req.admin_id, is_deleted: false });
+  if (!admin) {
+    return data_not_found(res, "Admin");
   }
 
   // Check current password
-  const isMatch = await bcrypt.compare(current_password, user.password);
+  const isMatch = await bcrypt.compare(current_password, admin.password);
   if (!isMatch) {
     return unauthorize(res, responseMessage.CURRENT_PASSWORD_INCORRECT);
   }
 
-  // Update the user's password
-  user.password = new_password;
-  await user.save();
-  return response_ok(res, responseMessage.PASSWORD_CHANGED, user);
+  // Update the admin's password
+  admin.password = new_password;
+  await admin.save();
+  return response_ok(res, responseMessage.PASSWORD_CHANGED, admin);
 });
 //#endregion
 
 //#region edit profile
 exports.delete_account = catchAsync(async (req, res) => {
-  const model = require("../model/userModel");
+  const model = require("../model/adminModel");
   const find_profile = await model.findById({
-    _id: req.user_id,
+    _id: req.admin_id,
     is_deleted: false,
   });
   if (find_profile) {
     const delete_account = await model.findByIdAndUpdate(
-      { _id: req.user_id },
+      { _id: req.admin_id },
       {
         $set: {
           is_deleted: true,
@@ -243,7 +207,7 @@ exports.delete_account = catchAsync(async (req, res) => {
       { new: true }
     );
     if (delete_account) {
-      return response_ok(res, responseMessage.USER_PROFILE_DELETED, []);
+      return response_ok(res, responseMessage.ADMIN_PROFILE_DELETED, []);
     } else {
       return response_bad_request(
         res,
@@ -252,45 +216,15 @@ exports.delete_account = catchAsync(async (req, res) => {
       );
     }
   } else {
-    return data_not_found(res, "User");
+    return data_not_found(res, "Admin");
   }
-});
-//#endregion
-
-//#region forgot password
-exports.generate_otp = catchAsync(async (req, res) => {
-  let user;
-  if (req.body.number) {
-    user = await findUserByNumber(req.body.number);
-  } else if (req.body.email) {
-    user = await findUserByEmail(req.body.email);
-  }
-  if (!user) {
-    return data_not_found(res, "User");
-  }
-  // const welcomeMessage = 'Welcome to Newness plant! Your verification code is 54875';
-  // sendSms(user.number, welcomeMessage);
-  // Generate reset token and set expiration time (30 minutes from now)
-  const resetToken = Math.floor(100000 + Math.random() * 900000);
-  user.reset_password_token = resetToken;
-  user.reset_password_expires = Date.now() + 30 * 60 * 1000; // 30 minutes
-  await user.save();
-  const payload = {
-    email: user.email,
-    name: user.first_name,
-    resetToken,
-  };
-  // Send reset email or message
-  await resetPasswordMailforUser(payload);
-  const type = req.body.number ? "message" : "email";
-  return response_ok(res, `Password reset ${type} sent`, user);
 });
 //#endregion
 
 //#region refresh token
 exports.refresh_token = catchAsync(async (req, res) => {
   const { refresh_token } = req.body;
-  const model = require("../model/userModel");
+  const model = require("../model/adminModel");
 
   // Verify the refresh token
   jwt.verify(
@@ -305,12 +239,12 @@ exports.refresh_token = catchAsync(async (req, res) => {
         );
       }
 
-      // Find the user associated with the refresh token
-      const user = await model.findById({
-        _id: decoded.userId,
+      // Find the admin associated with the refresh token
+      const admin = await model.findById({
+        _id: decoded.adminId,
         is_deleted: false,
       });
-      if (!user || !user.refresh_token === refresh_token) {
+      if (!admin || !admin.refresh_token === refresh_token) {
         return response_forbidden(
           res,
           responseMessage.INVALID_REFRESH_TOKEN,
@@ -320,7 +254,7 @@ exports.refresh_token = catchAsync(async (req, res) => {
 
       // Generate a new access token
       const newAccessToken = jwt.sign(
-        { userId: user._id },
+        { adminId: admin._id },
         process.env.ACCESS_TOKEN_SECRET,
         {
           expiresIn: "24hr",
@@ -335,17 +269,17 @@ exports.refresh_token = catchAsync(async (req, res) => {
 });
 //#endregion
 
-//#region get user infor
+//#region get admin infor
 exports.get_profile = catchAsync(async (req, res) => {
-  const model = require("../model/userModel");
+  const model = require("../model/adminModel");
   const find_profile = await model.findById({
-    _id: req.user_id,
+    _id: req.admin_id,
     is_deleted: false,
   });
   if (find_profile) {
     return response_ok(res, responseMessage.USER_PROFILE_FETCHED, find_profile);
   } else {
-    return data_not_found(res, "User");
+    return data_not_found(res, "Admin");
   }
 });
 //#endregion
