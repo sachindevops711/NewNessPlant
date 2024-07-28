@@ -4,18 +4,14 @@ const { v4: uuidv4 } = require("uuid");
 const jwt = require("jsonwebtoken");
 const {
   createJwtTokens,
-  encryptPassword,
   catchAsync,
-  findUserByNumber,
   findUserByEmail,
-  sendSms,
 } = require("../utils/commonFunction");
 const {
   internal_server_error,
   data_not_found,
   unauthorize,
   response_ok,
-  response_created,
   response_bad_request,
   custom_error_response,
   response_forbidden,
@@ -23,6 +19,7 @@ const {
 const fs = require("fs");
 const path = require("path");
 const { resetPasswordMailforUser } = require("../config/mailService");
+const constants = require("../constants/constants");
 
 //#region login
 exports.login = catchAsync(async (req, res) => {
@@ -33,19 +30,22 @@ exports.login = catchAsync(async (req, res) => {
     const validPassword = await bcrypt.compare(password, existAdmin.password);
     if (validPassword) {
       const payload = { adminId: existAdmin._id };
-      const { access_token, refresh_token } = createJwtTokens(payload);
+      const { access_token, refresh_token } = await createJwtTokens(
+        payload,
+        constants.ADMIN
+      );
       // Save refresh token to admin (you should store this securely)
       existAdmin.refresh_token = refresh_token;
       await existAdmin.save();
-      return response_ok(res, responseMessage.USER_LOGGED_IN, {
+      return response_ok(res, constants.LOGIN_MESSAGE, {
         access_token,
         ...existAdmin._doc,
       });
     } else {
-      return unauthorize(res, responseMessage.INCORRECT_CREDENTIALS);
+      return unauthorize(res, constants.INCORRECT_CREDENTIALS);
     }
   } else {
-    return data_not_found(res, "Email");
+    return data_not_found(res, "User");
   }
 });
 //#endregion

@@ -1,20 +1,17 @@
 // models/Category.js
 const mongoose = require("mongoose");
 
-const categorySchema = new mongoose.Schema({
-  name: {
-    type: String,
-    required: true,
-    unique: true,
-  },
-  image: {
-    type: String,
-    default: null,
+const termsandconditionSchema = new mongoose.Schema({
+  number: {
+    type: Number,
     required: false,
   },
-  is_deleted: {
-    type: Boolean,
-    default: false,
+  email: {
+    type: String,
+    required: false,
+  },
+  address: {
+    type: String,
     required: false,
   },
   createdAt: {
@@ -29,6 +26,6 @@ const categorySchema = new mongoose.Schema({
   },
 });
 
-const category = mongoose.model("category", categorySchema);
+const termsandcondition = mongoose.model("termsandcondition", termsandconditionSchema);
 
-module.exports = category;
+module.exports = termsandcondition;
