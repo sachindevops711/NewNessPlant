@@ -8,11 +8,11 @@ const port = 4000; // Use environment variable for port
 const routes = [
   {
     path: '/api/v1/user',
-    target: 'http://localhost:4003',
+    target: 'https://newnessplant.onrender.com',
   },
   {
     path: '/api/v1/admin',
-    target: 'http://localhost:4001',
+    target: 'https://newnessplant-1.onrender.com',
   },
 ];
 
@@ -46,5 +46,5 @@ app.use((err, req, res, next) => {
 
 // Start the server
 app.listen(port, () => {
-  console.log(`API Gateway is running on http://localhost:${port}`);
+  console.log(`API Gateway is running on ${port}`);
 });
