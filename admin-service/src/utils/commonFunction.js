@@ -24,7 +24,31 @@ exports.findUserByEmail = async (email) => {
 exports.findCategoryByName = async (name) => {
   try {
     const model = require("../model/categoryModel");
-    const category = await model.findOne({ name });
+    const category = await model.findOne({ name, is_deleted: false });
+    return category;
+  } catch (error) {
+    throw new Error(
+      `Error finding category by category name: ${error.message}`
+    );
+  }
+};
+
+exports.findPlantByName = async (name) => {
+  try {
+    const model = require("../model/plantModel");
+    const category = await model.findOne({ name, is_deleted: false });
+    return category;
+  } catch (error) {
+    throw new Error(
+      `Error finding category by category name: ${error.message}`
+    );
+  }
+};
+
+exports.findCategoryById = async (id) => {
+  try {
+    const model = require("../model/categoryModel");
+    const category = await model.findOne({ _id: id, is_deleted: false });
     return category;
   } catch (error) {
     throw new Error(

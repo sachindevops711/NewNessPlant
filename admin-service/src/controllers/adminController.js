@@ -132,16 +132,17 @@ exports.forgot_password = catchAsync(async (req, res) => {
 
 //#region reset password
 exports.reset_password = catchAsync(async (req, res) => {
-  // const { otp } = req.params;
   const { password, otp } = req.body;
   const model = require("../model/userModel");
-  // Find the admin with the reset token and check if it's still valid
-  const find_admin = await model.findOne({
+  const bcrypt = require("bcrypt");
+
+  // Find the user with the reset token and check if it's still valid
+  const find_user = await model.findOne({
     reset_password_token: otp,
     reset_password_expires: { $gt: Date.now() }, // Check if the token has not expired
   });
 
-  if (!find_admin) {
+  if (!find_user) {
     return custom_error_response(
       res,
       404,
@@ -149,20 +150,31 @@ exports.reset_password = catchAsync(async (req, res) => {
     );
   }
 
+  // Check if the new password is different from the old one
+  const isMatch = await bcrypt.compare(password, find_user.password);
+  if (isMatch) {
+    return custom_error_response(
+      res,
+      400,
+      "New password cannot be the same as the old password"
+    );
+  }
+
   // Hash the new password
   const salt = await bcrypt.genSalt(10);
   const hashedPassword = await bcrypt.hash(password, salt);
 
-  // Update the admin's password and clear the reset token fields
-  find_admin.password = hashedPassword;
-  find_admin.reset_password_token = undefined;
-  find_admin.reset_password_expires = undefined;
-  await find_admin.save();
+  // Update the user's password and clear the reset token fields
+  find_user.password = hashedPassword;
+  find_user.reset_password_token = undefined;
+  find_user.reset_password_expires = undefined;
+  await find_user.save();
 
   return response_ok(res, "Password has been reset successfully", {
-    user_id: find_admin._id,
+    user_id: find_user._id,
   });
 });
+
 //#endregion
 
 //#region change password

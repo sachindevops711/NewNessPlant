@@ -5,6 +5,7 @@ const PORT = process.env.PORT;
 require("./src/config/db.config");
 const admin = require('./src/routes/adminRoutes');
 const category = require('./src/routes/categoryRoutes');
+const plant = require('./src/routes/plantRoutes');
 const cms = require('./src/routes/cmsRoutes');
 const { internal_server_error } = require("./src/utils/commonResponse");
 
@@ -14,6 +15,7 @@ app.use(express.json())
 
 app.use('/', admin);
 app.use('/category', category);
+app.use('/plant', plant);
 app.use('/cms', cms);
 // Error handling middleware
 app.use((err, req, res, next) => {

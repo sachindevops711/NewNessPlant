@@ -1,6 +1,11 @@
 const responseMessage = require("../helper/responseMessage");
 const { v4: uuidv4 } = require("uuid");
-const { catchAsync, findCategoryByName } = require("../utils/commonFunction");
+const {
+  catchAsync,
+  findCategoryByName,
+  findCategoryById,
+  findPlantByName,
+} = require("../utils/commonFunction");
 const {
   internal_server_error,
   data_not_found,
@@ -15,13 +20,15 @@ const fs = require("fs");
 const path = require("path");
 const constants = require("../constants/constants");
 
-//region create category api
-exports.create_category = catchAsync(async (req, res) => {
-  const { name } = req.body;
-  const model = require("../model/categoryModel");
-  const existCategory = await findCategoryByName(name);
-  if (existCategory) {
-    return response_ok(res, constants.ALREADY_EXIST("Category"), existCategory);
+//region create plant api
+exports.create_plant = catchAsync(async (req, res) => {
+  const { name, description, video, categorieName, id, regular_price, sale_price, discount } =
+    req.body;
+  const model = require("../model/plantModel");
+  const existPlant = await findPlantByName(name);
+  const existCategory = await findCategoryById(id);
+  if (existPlant) {
+    return response_ok(res, constants.ALREADY_EXIST("Plant name"), existPlant);
   } else {
     const joinSlug = (str) => {
       return str
@@ -31,20 +38,27 @@ exports.create_category = catchAsync(async (req, res) => {
     };
     const data = new model({
       name,
-      slug: joinSlug(name),
+      regular_price,
+      sale_price,
+      video,
+      discount,
+      description,
+      categorieName,
+      category_id:existCategory._id,
+      slug: `${existCategory._id}-${joinSlug(name)}`,
       image: req.fileUrl,
     });
     let result = await data.save();
     if (result) {
       return response_created(
         res,
-        constants.CREATED_SUCCESSFULLY("Category"),
+        constants.CREATED_SUCCESSFULLY("New Plant"),
         result
       );
     } else {
       return response_bad_request(
         res,
-        constants.FAILED_MESSAGE("create a category"),
+        constants.FAILED_MESSAGE("create a new plant"),
         []
       );
     }
@@ -52,19 +66,19 @@ exports.create_category = catchAsync(async (req, res) => {
 });
 //#endregion
 
-//#region edit category
-exports.edit_category = catchAsync(async (req, res) => {
+//#region edit plant
+exports.edit_plant = catchAsync(async (req, res) => {
   const { id } = req.params;
   const { name } = req.body;
-  const model = require("../model/categoryModel");
-  const find_category = await model.findById({
+  const model = require("../model/plantModel");
+  const find_plant = await model.findById({
     _id: id,
     is_deleted: false,
   });
   if (req.fileUrl) {
     // If an old image exists, delete it
-    if (find_category.image !== null) {
-      const oldFilePath = path.join("./public/upload", find_category.image);
+    if (find_plant.image !== null) {
+      const oldFilePath = path.join("./public/upload", find_plant.image);
       fs.unlink(oldFilePath, (err) => {
         if (err) {
           console.error(`Error deleting old image: ${err.message}`);
@@ -72,15 +86,15 @@ exports.edit_category = catchAsync(async (req, res) => {
       });
     }
   }
-  if (find_category) {
+  if (find_plant) {
     const joinSlug = (str) => {
       return str
         .toLowerCase() // Convert to lowercase
         .replace(/[^a-z0-9]+/g, "-") // Replace non-alphanumeric characters with hyphens
         .replace(/^-+|-+$/g, ""); // Remove leading and trailing hyphens
     };
-    const update_category = await model.findByIdAndUpdate(
-      { _id: find_category._id },
+    const update_plant = await model.findByIdAndUpdate(
+      { _id: find_plant._id },
       {
         $set: {
           name,
@@ -90,45 +104,45 @@ exports.edit_category = catchAsync(async (req, res) => {
       },
       { new: true }
     );
-    if (update_category) {
+    if (update_plant) {
       return response_ok(
         res,
-        constants.UPDATED_SUCCESSFULLY("Category"),
-        update_category
+        constants.UPDATED_SUCCESSFULLY("Plant"),
+        update_plant
       );
     } else {
       return response_bad_request(
         res,
-        constants.FAILED_MESSAGE("update category"),
+        constants.FAILED_MESSAGE("update plant"),
         []
       );
     }
   } else {
-    return data_not_found(res, "Category");
+    return data_not_found(res, "Plant");
   }
 });
 //#endregion
 
-//#region delete category
-exports.delete_category = catchAsync(async (req, res) => {
+//#region delete plant
+exports.delete_plant = catchAsync(async (req, res) => {
   const { id } = req.params;
-  const model = require("../model/categoryModel");
-  const find_category = await model.findById({
+  const model = require("../model/plantModel");
+  const find_plant = await model.findById({
     _id: id,
     is_deleted: false,
   });
   // If an old image exists, delete it
-  if (find_category.image !== null) {
-    const oldFilePath = path.join("./public/upload", find_category.image);
+  if (find_plant.image !== null) {
+    const oldFilePath = path.join("./public/upload", find_plant.image);
     fs.unlink(oldFilePath, (err) => {
       if (err) {
         console.error(`Error deleting old image: ${err.message}`);
       }
     });
   }
-  if (find_category) {
-    const delete_category = await model.findByIdAndUpdate(
-      { _id: find_category._id },
+  if (find_plant) {
+    const delete_plant = await model.findByIdAndUpdate(
+      { _id: find_plant._id },
       {
         $set: {
           is_deleted: true,
@@ -136,59 +150,59 @@ exports.delete_category = catchAsync(async (req, res) => {
       },
       { new: true }
     );
-    if (delete_category) {
+    if (delete_plant) {
       return response_ok(
         res,
-        constants.DELETED_SUCCESSFULLY("Category"),
-        delete_category
+        constants.DELETED_SUCCESSFULLY("Plant"),
+        delete_plant
       );
     } else {
       return response_bad_request(
         res,
-        constants.FAILED_MESSAGE("delete category"),
+        constants.FAILED_MESSAGE("delete plant"),
         []
       );
     }
   } else {
-    return data_not_found(res, "Category");
+    return data_not_found(res, "Plant");
   }
 });
 //#endregion
 
-//#region get category by id
-exports.get_category_by_id = catchAsync(async (req, res) => {
+//#region get plant by id
+exports.get_plant_by_id = catchAsync(async (req, res) => {
   const { id } = req.params;
-  const model = require("../model/categoryModel");
-  const find_category = await model.findOne({
+  const model = require("../model/plantModel");
+  const find_plant = await model.findOne({
     _id: id,
     is_deleted: false,
   });
-  if (find_category) {
+  if (find_plant) {
     return response_ok(
       res,
-      constants.FETCHED_SUCCESSFULLY("Category"),
-      find_category
+      constants.FETCHED_SUCCESSFULLY("Plant"),
+      find_plant
     );
   } else {
-    return data_not_found(res, "Category");
+    return data_not_found(res, "Plant");
   }
 });
 //#endregion
 
-//#region get category
-exports.get_category = catchAsync(async (req, res) => {
-  const model = require("../model/categoryModel");
-  const find_category = await model.find({
+//#region get plant
+exports.get_plant = catchAsync(async (req, res) => {
+  const model = require("../model/plantModel");
+  const find_plant = await model.find({
     is_deleted: false,
   });
-  if (find_category.length > 0) {
+  if (find_plant.length > 0) {
     return response_ok(
       res,
-      constants.FETCHED_SUCCESSFULLY("Category"),
-      find_category
+      constants.FETCHED_SUCCESSFULLY("Plant"),
+      find_plant
     );
   } else {
-    return data_not_found(res, "Category");
+    return data_not_found(res, "Plant");
   }
 });
 //#endregion
