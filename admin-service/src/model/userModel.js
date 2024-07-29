@@ -1,42 +1,53 @@
 const mongoose = require("mongoose");
-
-const adminSchema = new mongoose.Schema({
-  name: {
+const bcrypt = require("bcrypt");
+const userSchema = new mongoose.Schema({
+  first_name: {
     type: String,
     trim: true,
-    required: false,
+    required: false
+  },
+  last_name: {
+    type: String,
+    default: null,
+    trim: true,
+    required: false
   },
   email: {
     type: String,
     trim: true,
     lowercase: true,
-    required: false,
+    required: false
+  },
+  number: {
+    type: Number,
+    default: null,
+    required: false
   },
   profile_image: {
     type: String,
     default: null,
-    required: false,
+    required: false
   },
   password: {
     type: String,
-    required: false,
+    required: false
   },
-  refresh_token: {
+  refresh_token:{
     type: String,
-    required: false,
+    required: false
   },
-  is_deleted: {
+  is_deleted:{
     type: Boolean,
     default: false,
-    required: false,
+    required: false
   },
-  reset_password_token: {
+  reset_password_token:{
     type: String,
-    required: false,
+    required: false
   },
-  reset_password_expires: {
+  reset_password_expires:{
     type: Date,
-    required: false,
+    required: false
   },
   createdAt: {
     type: Date,
@@ -50,8 +61,8 @@ const adminSchema = new mongoose.Schema({
   },
 });
 
-// Before saving the admin document, hash the password if it's modified
-adminSchema.pre("save", async function (next) {
+// Before saving the user document, hash the password if it's modified
+userSchema.pre("save", async function(next) {
   if (!this.isModified("password")) {
     return next();
   }
@@ -64,6 +75,6 @@ adminSchema.pre("save", async function (next) {
   }
 });
 
-const admin = mongoose.model("admin", adminSchema);
+const user = mongoose.model("user", userSchema);
 
-module.exports = admin;
+module.exports = user;

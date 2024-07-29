@@ -1,7 +1,7 @@
 const jwt = require("jsonwebtoken");
 require("dotenv").config();
 const bcrypt = require("bcryptjs");
-const adminModel = require("../model/adminModel");
+const adminModel = require("../model/userModel");
 const accountSid = process.env.TWILIO_ACCOUNT_SID;
 const authToken = process.env.TWILIO_AUTH_TOKEN;
 const Textlocal = require("textlocal-complete");
@@ -23,11 +23,13 @@ exports.findUserByEmail = async (email) => {
 
 exports.findCategoryByName = async (name) => {
   try {
-    const model = require('../model/categoryModel')
+    const model = require("../model/categoryModel");
     const category = await model.findOne({ name });
     return category;
   } catch (error) {
-    throw new Error(`Error finding category by category name: ${error.message}`);
+    throw new Error(
+      `Error finding category by category name: ${error.message}`
+    );
   }
 };
 

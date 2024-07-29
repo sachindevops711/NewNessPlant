@@ -53,7 +53,7 @@ exports.login = catchAsync(async (req, res) => {
 //#region edit profile
 exports.edit_profile = catchAsync(async (req, res) => {
   const { name, dob, gender } = req.body;
-  const model = require("../model/adminModel");
+  const model = require("../model/userModel");
   const find_profile = await model.findById({
     _id: req.admin_id,
     is_deleted: false,
@@ -107,7 +107,7 @@ exports.edit_profile = catchAsync(async (req, res) => {
 
 //#region forgot password
 exports.forgot_password = catchAsync(async (req, res) => {
-  let admin= await findUserByEmail(req.body.email);
+  let admin = await findUserByEmail(req.body.email);
   if (!admin) {
     return data_not_found(res, "Admin");
   }
@@ -133,7 +133,7 @@ exports.forgot_password = catchAsync(async (req, res) => {
 exports.reset_password = catchAsync(async (req, res) => {
   const { otp } = req.params;
   const { password } = req.body;
-  const model = require("../model/adminModel");
+  const model = require("../model/userModel");
   // Find the admin with the reset token and check if it's still valid
   const find_admin = await model.findOne({
     reset_password_token: otp,
@@ -167,7 +167,7 @@ exports.reset_password = catchAsync(async (req, res) => {
 //#region change password
 exports.change_password = catchAsync(async (req, res) => {
   const { current_password, new_password } = req.body;
-  const model = require("../model/adminModel");
+  const model = require("../model/userModel");
   // Find the admin
   const admin = await model.findById({ _id: req.admin_id, is_deleted: false });
   if (!admin) {
@@ -189,7 +189,7 @@ exports.change_password = catchAsync(async (req, res) => {
 
 //#region edit profile
 exports.delete_account = catchAsync(async (req, res) => {
-  const model = require("../model/adminModel");
+  const model = require("../model/userModel");
   const find_profile = await model.findById({
     _id: req.admin_id,
     is_deleted: false,
@@ -224,7 +224,7 @@ exports.delete_account = catchAsync(async (req, res) => {
 //#region refresh token
 exports.refresh_token = catchAsync(async (req, res) => {
   const { refresh_token } = req.body;
-  const model = require("../model/adminModel");
+  const model = require("../model/userModel");
 
   // Verify the refresh token
   jwt.verify(
@@ -271,7 +271,7 @@ exports.refresh_token = catchAsync(async (req, res) => {
 
 //#region get admin infor
 exports.get_profile = catchAsync(async (req, res) => {
-  const model = require("../model/adminModel");
+  const model = require("../model/userModel");
   const find_profile = await model.findById({
     _id: req.admin_id,
     is_deleted: false,
