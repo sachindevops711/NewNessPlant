@@ -15,7 +15,7 @@ router.post(
 );
 router.post(
   "/reset_password",
-  [validator("resetPassword")],
+  [validator("reset_password")],
   admin_controller.reset_password
 );
 router.post("/change_password",  [validator("change_password")], adminAuth, admin_controller.change_password);
