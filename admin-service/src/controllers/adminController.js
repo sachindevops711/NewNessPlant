@@ -52,7 +52,7 @@ exports.login = catchAsync(async (req, res) => {
 
 //#region edit profile
 exports.edit_profile = catchAsync(async (req, res) => {
-  const { name, dob, gender } = req.body;
+  const { name, last_name, dob, gender } = req.body;
   const model = require("../model/userModel");
   const find_profile = await model.findById({
     _id: req.admin_id,
@@ -78,7 +78,8 @@ exports.edit_profile = catchAsync(async (req, res) => {
       { _id: find_profile._id },
       {
         $set: {
-          name,
+          first_name: name,
+          last_name,
           dob,
           gender,
           profile_image: req.fileUrl,
@@ -125,14 +126,14 @@ exports.forgot_password = catchAsync(async (req, res) => {
   };
   // Send reset email or message
   await resetPasswordMailforUser(payload);
-  return response_ok(res, `Password reset number sent`, admin);
+  return response_ok(res, `Password reset email sent`, admin);
 });
 //#endregion
 
 //#region reset password
 exports.reset_password = catchAsync(async (req, res) => {
-  const { otp } = req.params;
-  const { password } = req.body;
+  // const { otp } = req.params;
+  const { password, otp } = req.body;
   const model = require("../model/userModel");
   // Find the admin with the reset token and check if it's still valid
   const find_admin = await model.findOne({

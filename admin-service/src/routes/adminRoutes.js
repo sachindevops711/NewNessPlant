@@ -8,12 +8,21 @@ const validator = require("../middleware/validation");
 // admin side APIs
 router.get("/get_profile", adminAuth, admin_controller.get_profile);
 router.post("/login", [validator("login")], admin_controller.login);
-router.post("/forgot_password", admin_controller.forgot_password);
-router.post("/reset_password/:otp", admin_controller.reset_password);
-router.post("/change_password", adminAuth, admin_controller.change_password);
-router.post("/refresh_token", admin_controller.refresh_token);
+router.post(
+  "/forget_password",
+  [validator("forget_password")],
+  admin_controller.forgot_password
+);
+router.post(
+  "/reset_password",
+  [validator("resetPassword")],
+  admin_controller.reset_password
+);
+router.post("/change_password",  [validator("change_password")], adminAuth, admin_controller.change_password);
+router.post("/refresh_token", [validator("refresh_token")], admin_controller.refresh_token);
 router.put(
   "/edit_profile",
+  [validator("edit_user_profile")],
   adminAuth,
   uploadSingleImages,
   admin_controller.edit_profile
