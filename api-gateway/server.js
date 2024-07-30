@@ -3,7 +3,7 @@ const { createProxyMiddleware } = require('http-proxy-middleware');
 require("dotenv").config();
 const app = express();
 const port = 4000; // Use environment variable for port
-
+const cors = require('cors');
 // Define routes and target microservices
 const routes = [
   {
@@ -33,7 +33,7 @@ routes.forEach((route) => {
 app.get('/api/health', (req, res) => {
   res.status(200).json({ status: 'API Gateway is running' });
 });
-
+app.use(cors());
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error(err.stack);
