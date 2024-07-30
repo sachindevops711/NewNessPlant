@@ -42,3 +42,7 @@ jobs:
     - name: Run starts
       run: npm start
       working-directory: api-gateway
+
+    - name: Display package.json
+      run: cat ./NewNessPlant/package.json
+
