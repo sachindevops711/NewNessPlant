@@ -5,10 +5,11 @@ const PORT = process.env.PORT;
 require("./src/config/db.config");
 const user = require('./src/routes/userRoutes');
 const { internal_server_error } = require("./src/utils/commonResponse");
-
+const cors = require("cors");
 app.use("/media", express.static("./public/uploads"));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json())
+app.use(cors());
 
 app.use('/', user);
 // Error handling middleware
